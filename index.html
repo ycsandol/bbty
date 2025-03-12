@@ -5,26 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>성경 말씀 타자 연습</title>
     <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 10px; }
-    #container { max-width: 600px; margin: auto; text-align: center; padding-top: 120px; }
-    #verseTitle { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-    .verseContainer { margin-bottom: 20px; text-align: left; }
-    .verseNumber { font-weight: bold; margin-right: 10px; }
-    .verseText { padding: 0 5px; display: block; }
-    .verseText, .verseInput { font-size: 18px; margin-bottom: 5px; white-space: pre-line; flex: 1; width: 100%; }
-    .verseInput { padding: 5px; height: auto; min-height: 50px; line-height: 1.5; font-family: Arial, sans-serif; }
-    .correct { color: green; }
-    .incorrect { color: red; }
-    .completed { pointer-events: none; background-color: #e0e0e0; }
-    
-    /* 고정 상단 스타일 */
-    #header { position: fixed; top: 0; left: 0; width: 100%; background-color: white; padding: 20px 0; z-index: 10; border-bottom: 1px solid #ccc; }
-    #header h1, #header #verseTitle { margin: 0; }
-    #header h1 { margin-bottom: 10px; }
-    #header #verseTitle { margin-top: 10px; }
-</style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 10px; background-color: #f8f9fa; }
+        #container { max-width: 700px; margin: auto; text-align: center; padding-top: 120px; }
+        #verseTitle { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .verseContainer { margin-bottom: 20px; text-align: left; background: white; padding: 10px; border-radius: 10px; box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); }
+        .verseNumber { font-weight: bold; margin-right: 10px; }
+        .verseText { padding: 0 5px; display: block; }
+        .verseText, .verseInput { font-size: 18px; margin-bottom: 5px; white-space: pre-line; flex: 1; width: calc(100% - 12px); }
+        .verseInput { padding: 5px; height: auto; min-height: 50px; line-height: 1.5; font-family: Arial, sans-serif; border: 1px solid #ccc; border-radius: 5px; }
+        .correct { color: green; }
+        .incorrect { color: red; }
+        .completed { pointer-events: none; background-color: #e0e0e0; }
+        
+        /* 고정 상단 스타일 */
+        #header { position: fixed; top: 0; left: 0; width: 100%; background-color: white; padding: 20px 0; z-index: 10; border-bottom: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); }
+        #header h1, #header #verseTitle { margin: 0; }
+        #header h1 { margin-bottom: 10px; }
+        #header #verseTitle { margin-top: 10px; }
 
-
+        /* 완료 메시지 스타일 */
+        #completionMessage {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div id="header">
@@ -36,8 +48,14 @@
         <div id="verseDisplay"></div>
     </div>
 
+    <div id="completionMessage">
+        <h2>축하합니다!</h2>
+        <p id="timeTaken"></p>
+        <button onclick="closeMessage()">닫기</button>
+    </div>
+
     <script>
-    const verses = [
+        const verses = [
         "한 율법사가 일어나 예수께 시험하려 하여 이르되 선생님 내가 무엇을 하여야 영생을 얻으리이까?",
         "예수께서 이르시되 율법에 무엇이라고 기록되었으며 네가 어떻게 읽느냐?",
         "그가 대답하여 이르되 네 마음을 다하고 목숨을 다하고 힘을 다하고 뜻을 다하여 주 너의 하나님을 사랑하고 네 이웃을 네 자신과 같이 사랑하라 하였나이다.",
@@ -57,108 +75,102 @@
         "예수께서 대답하여 이르시되 마르다야 마르다야 네가 많은 일을 염려하고 걱정하나",
         "필요한 것은 한 가지 뿐이라 마리아는 그 좋은 부분을 택하였으니 그것을 빼앗기지 아니하리라 하시니라"
     ];
-    
-    const verseDisplay = document.getElementById("verseDisplay");
-    let startTime = null;
-    let completedVerses = 0;
-    
-    verses.forEach((verse, index) => {
-        const verseContainer = document.createElement("div");
-        verseContainer.classList.add("verseContainer");
         
-        const verseNumber = document.createElement("span");
-        verseNumber.classList.add("verseNumber");
-        verseNumber.textContent = `${index + 25}절`;
+        const verseDisplay = document.getElementById("verseDisplay");
+        let startTime = null;
+        let completedVerses = 0;
         
-        const verseText = document.createElement("div");
-        verseText.classList.add("verseText");
-        verseText.innerHTML = verse.split('').map(c => `<span>${c}</span>`).join('');
-        
-        const inputField = document.createElement("textarea");
-        inputField.classList.add("verseInput");
-        inputField.setAttribute("data-index", index);
-        inputField.placeholder = "이 절을 입력하세요...";
-        inputField.rows = "2";
-        inputField.addEventListener("input", function(event) {
-            if (!startTime) startTime = new Date();
-            checkTyping(event);
-        });
-        inputField.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        
-        // 현재 입력 필드를 읽기 전용으로 변경
-        inputField.setAttribute("readonly", "true");
-
-        // 다음 입력 필드로 이동
-        moveToNextInput(index);
-
-        // 스크롤 이동 (약간의 지연 추가)
-        setTimeout(() => scrollUp(index), 50);
-    }
-});
-
-        
-        verseContainer.appendChild(verseNumber);
-        verseContainer.appendChild(verseText);
-        verseContainer.appendChild(inputField);
-        verseDisplay.appendChild(verseContainer);
-    });
-    
-    function checkTyping(event) {
-        const inputField = event.target;
-        const index = parseInt(inputField.getAttribute("data-index"));
-        const expectedText = verses[index];
-        const userInput = inputField.value;
-        let formattedText = "";
-        
-        for (let i = 0; i < expectedText.length; i++) {
-            if (i < userInput.length) {
-                if (userInput[i] === expectedText[i]) {
-                    formattedText += `<span class='correct'>${expectedText[i]}</span>`;
-                } else {
-                    formattedText += `<span class='incorrect'>${expectedText[i]}</span>`;
+        verses.forEach((verse, index) => {
+            const verseContainer = document.createElement("div");
+            verseContainer.classList.add("verseContainer");
+            
+            const verseNumber = document.createElement("span");
+            verseNumber.classList.add("verseNumber");
+            verseNumber.textContent = `${index + 25}절`;
+            
+            const verseText = document.createElement("div");
+            verseText.classList.add("verseText");
+            verseText.innerHTML = verse.split('').map(c => `<span>${c}</span>`).join('');
+            
+            const inputField = document.createElement("textarea");
+            inputField.classList.add("verseInput");
+            inputField.setAttribute("data-index", index);
+            inputField.placeholder = "이 절을 입력하세요...";
+            inputField.rows = "2";
+            inputField.addEventListener("input", function(event) {
+                if (!startTime) startTime = new Date();
+                checkTyping(event);
+            });
+            inputField.addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    moveToNextInput(index);
+                    scrollUp(index);
                 }
-            } else {
-                formattedText += expectedText[i];
-            }
-        }
+            });
+            
+            verseContainer.appendChild(verseNumber);
+            verseContainer.appendChild(verseText);
+            verseContainer.appendChild(inputField);
+            verseDisplay.appendChild(verseContainer);
+        });
         
-        inputField.previousSibling.innerHTML = formattedText;
-        
-        if (userInput === expectedText) {
-            inputField.classList.add("completed");
-            inputField.setAttribute("readonly", "true");
-            completedVerses++;
-            if (completedVerses === verses.length) {
-                document.querySelectorAll(".verseInput")[verses.length - 1].addEventListener("keypress", function(event) {
-                    if (event.key === "Enter") {
-                        event.preventDefault();
-                        const endTime = new Date();
-                        const elapsedTime = (endTime - startTime) / 1000; // 초 단위
-                        const minutes = Math.floor(elapsedTime / 60);
-                        const seconds = (elapsedTime % 60).toFixed(2);
-                        alert(`축하합니다! 완료 시간: ${minutes}분 ${seconds}초`);
+        function checkTyping(event) {
+            const inputField = event.target;
+            const index = parseInt(inputField.getAttribute("data-index"));
+            const expectedText = verses[index];
+            const userInput = inputField.value;
+            let formattedText = "";
+            
+            for (let i = 0; i < expectedText.length; i++) {
+                if (i < userInput.length) {
+                    if (userInput[i] === expectedText[i]) {
+                        formattedText += `<span class='correct'>${expectedText[i]}</span>`;
+                    } else {
+                        formattedText += `<span class='incorrect'>${expectedText[i]}</span>`;
                     }
-                });
+                } else {
+                    formattedText += expectedText[i];
+                }
             }
-        } 
-    }
-    
-    function moveToNextInput(currentIndex) {
-        if (currentIndex < verses.length - 1) {
-            document.querySelectorAll(".verseInput")[currentIndex + 1].focus();
+            
+            inputField.previousSibling.innerHTML = formattedText;
+            
+            if (userInput === expectedText) {
+                inputField.classList.add("completed");
+                inputField.setAttribute("readonly", "true");
+                completedVerses++;
+                if (completedVerses === verses.length) {
+                    showCompletionMessage();
+                }
+            } 
         }
-    }
-
-    // 스크롤을 위로 올려주는 함수
-    function scrollUp(currentIndex) {
-        const verses = document.querySelectorAll(".verseContainer");
-        if (currentIndex < verses.length - 1) {
-            verses[currentIndex].scrollIntoView({ behavior: "smooth", block: "start" });
+        
+        function moveToNextInput(currentIndex) {
+            if (currentIndex < verses.length - 1) {
+                document.querySelectorAll(".verseInput")[currentIndex + 1].focus();
+            }
         }
-    }
-</script>
 
+        function scrollUp(currentIndex) {
+            const verses = document.querySelectorAll(".verseContainer");
+            if (currentIndex < verses.length - 1) {
+                verses[currentIndex].scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+
+        function showCompletionMessage() {
+            const endTime = new Date();
+            const elapsedTime = (endTime - startTime) / 1000;
+            const minutes = Math.floor(elapsedTime / 60);
+            const seconds = (elapsedTime % 60).toFixed(2);
+            document.getElementById("timeTaken").textContent = `완료 시간: ${minutes}분 ${seconds}초`;
+            document.getElementById("completionMessage").style.display = "block";
+        }
+
+        function closeMessage() {
+            document.getElementById("completionMessage").style.display = "none";
+        }
+    </script>
 </body>
 </html>
