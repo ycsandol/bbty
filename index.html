@@ -83,13 +83,21 @@
             if (!startTime) startTime = new Date();
             checkTyping(event);
         });
-        inputField.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                moveToNextInput(index);
-                scrollUp(index); // 엔터 입력 후 스크롤을 위로 올림
-            }
-        });
+        inputField.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        
+        // 현재 입력 필드를 읽기 전용으로 변경
+        inputField.setAttribute("readonly", "true");
+
+        // 다음 입력 필드로 이동
+        moveToNextInput(index);
+
+        // 스크롤 이동 (약간의 지연 추가)
+        setTimeout(() => scrollUp(index), 50);
+    }
+});
+
         
         verseContainer.appendChild(verseNumber);
         verseContainer.appendChild(verseText);
