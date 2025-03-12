@@ -1,1 +1,156 @@
-<h1>Hello World</h1>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>성경 말씀 타자 연습</title>
+    <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 10px; }
+    #container { max-width: 600px; margin: auto; text-align: center; padding-top: 120px; }
+    #verseTitle { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+    .verseContainer { margin-bottom: 20px; text-align: left; }
+    .verseNumber { font-weight: bold; margin-right: 10px; }
+    .verseText { padding: 0 5px; display: block; }
+    .verseText, .verseInput { font-size: 18px; margin-bottom: 5px; white-space: pre-line; flex: 1; width: 100%; }
+    .verseInput { padding: 5px; height: auto; min-height: 50px; line-height: 1.5; font-family: Arial, sans-serif; }
+    .correct { color: green; }
+    .incorrect { color: red; }
+    .completed { pointer-events: none; background-color: #e0e0e0; }
+    
+    /* 고정 상단 스타일 */
+    #header { position: fixed; top: 0; left: 0; width: 100%; background-color: white; padding: 20px 0; z-index: 10; border-bottom: 1px solid #ccc; }
+    #header h1, #header #verseTitle { margin: 0; }
+    #header h1 { margin-bottom: 10px; }
+    #header #verseTitle { margin-top: 10px; }
+</style>
+
+
+</head>
+<body>
+    <div id="header">
+        <h1>성경 말씀 타자 연습</h1>
+        <p id="verseTitle">[누가복음 10장 25 - 42]</p>
+    </div>
+
+    <div id="container">
+        <div id="verseDisplay"></div>
+    </div>
+
+    <script>
+    const verses = [
+        "한 율법사가 일어나 예수께 시험하려 하여 이르되 선생님 내가 무엇을 하여야 영생을 얻으리이까?",
+        "예수께서 이르시되 율법에 무엇이라고 기록되었으며 네가 어떻게 읽느냐?",
+        "그가 대답하여 이르되 네 마음을 다하고 목숨을 다하고 힘을 다하고 뜻을 다하여 주 너의 하나님을 사랑하고 네 이웃을 네 자신과 같이 사랑하라 하였나이다.",
+        "예수께서 이르시되 네 대답이 옳도다 이를 행하라 그리하면 살리라.",
+        "이 사람이 자기를 옳게 보이려고 예수께 다시 묻되 그러면 내 이웃이 누구오니이까?",
+        "예수께서 대답하여 이르시되 어떤 사람이 예루살렘에서 여리고로 내려가다가 강도들을 만났는데 그들이 그를 벗고 때려 빈몸으로 보내었거늘",
+        "우연히 한 제사장이 그 길을 내려가다가 그를 보고 피하여 지나가고",
+        "또 한 레위인도 그 곳에 이르러 그를 보고 피하여 지나가되",
+        "어떤 사마리아 사람은 여행 가는 중 그를 보고 불쌍히 여겨",
+        "그에게 가까이 가서 기름과 포도주를 부어 상처를 닦아 주고 자기 짐승에 태워 여관에 데리고 가서 돌보았더니",
+        "다음 날에 데려다가 두 데나리온을 내어 여관주에게 주며 이르되 이 사람을 돌보라 무엇이 더 들면 내가 돌아올 때에 갚으리라 하였으니",
+        "네가 이 사람에게 행한 긍휼을 보아 이 세 사람 중에 누구가 강도 만난 자의 이웃이 되겠느냐?",
+        "그가 이르되 긍휼을 베푼 자니이다. 예수께서 이르시되 가서 너도 이와 같이 하라.",
+        "예수께서 마르다의 집에 들어가시니 마르다는 예수의 발 앞에 앉아 말씀을 듣고",
+        "그의 동생 마리아는 예수의 발 앞에 앉아 말씀을 듣고",
+        "마르다는 많은 일이 준비되는 것이 속상하여 예수께 나아가 이르되 주께서 저를 돌아보시지 아니하시나이까? 제 동생이 나 혼자 일하게 두는 것을 보시고 그에게 말하여 도와주라 하소서.",
+        "예수께서 대답하여 이르시되 마르다야 마르다야 네가 많은 일을 염려하고 걱정하나",
+        "필요한 것은 한 가지 뿐이라 마리아는 그 좋은 부분을 택하였으니 그것을 빼앗기지 아니하리라 하시니라"
+    ];
+    
+    const verseDisplay = document.getElementById("verseDisplay");
+    let startTime = null;
+    let completedVerses = 0;
+    
+    verses.forEach((verse, index) => {
+        const verseContainer = document.createElement("div");
+        verseContainer.classList.add("verseContainer");
+        
+        const verseNumber = document.createElement("span");
+        verseNumber.classList.add("verseNumber");
+        verseNumber.textContent = `${index + 25}절`;
+        
+        const verseText = document.createElement("div");
+        verseText.classList.add("verseText");
+        verseText.innerHTML = verse.split('').map(c => `<span>${c}</span>`).join('');
+        
+        const inputField = document.createElement("textarea");
+        inputField.classList.add("verseInput");
+        inputField.setAttribute("data-index", index);
+        inputField.placeholder = "이 절을 입력하세요...";
+        inputField.rows = "2";
+        inputField.addEventListener("input", function(event) {
+            if (!startTime) startTime = new Date();
+            checkTyping(event);
+        });
+        inputField.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                moveToNextInput(index);
+                scrollUp(index); // 엔터 입력 후 스크롤을 위로 올림
+            }
+        });
+        
+        verseContainer.appendChild(verseNumber);
+        verseContainer.appendChild(verseText);
+        verseContainer.appendChild(inputField);
+        verseDisplay.appendChild(verseContainer);
+    });
+    
+    function checkTyping(event) {
+        const inputField = event.target;
+        const index = parseInt(inputField.getAttribute("data-index"));
+        const expectedText = verses[index];
+        const userInput = inputField.value;
+        let formattedText = "";
+        
+        for (let i = 0; i < expectedText.length; i++) {
+            if (i < userInput.length) {
+                if (userInput[i] === expectedText[i]) {
+                    formattedText += `<span class='correct'>${expectedText[i]}</span>`;
+                } else {
+                    formattedText += `<span class='incorrect'>${expectedText[i]}</span>`;
+                }
+            } else {
+                formattedText += expectedText[i];
+            }
+        }
+        
+        inputField.previousSibling.innerHTML = formattedText;
+        
+        if (userInput === expectedText) {
+            inputField.classList.add("completed");
+            inputField.setAttribute("readonly", "true");
+            completedVerses++;
+            if (completedVerses === verses.length) {
+                document.querySelectorAll(".verseInput")[verses.length - 1].addEventListener("keypress", function(event) {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        const endTime = new Date();
+                        const elapsedTime = (endTime - startTime) / 1000; // 초 단위
+                        const minutes = Math.floor(elapsedTime / 60);
+                        const seconds = (elapsedTime % 60).toFixed(2);
+                        alert(`축하합니다! 완료 시간: ${minutes}분 ${seconds}초`);
+                    }
+                });
+            }
+        } 
+    }
+    
+    function moveToNextInput(currentIndex) {
+        if (currentIndex < verses.length - 1) {
+            document.querySelectorAll(".verseInput")[currentIndex + 1].focus();
+        }
+    }
+
+    // 스크롤을 위로 올려주는 함수
+    function scrollUp(currentIndex) {
+        const verses = document.querySelectorAll(".verseContainer");
+        if (currentIndex < verses.length - 1) {
+            verses[currentIndex].scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }
+</script>
+
+</body>
+</html>
