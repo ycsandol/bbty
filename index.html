@@ -50,6 +50,7 @@
 
     <div id="completionMessage">
         <h2>축하합니다!</h2>
+        <p id="customMessage"></p>
         <p id="timeTaken"></p>
         <button onclick="closeMessage()">닫기</button>
     </div>
@@ -159,6 +160,7 @@
             const elapsedTime = (endTime - startTime) / 1000;
             const minutes = Math.floor(elapsedTime / 60);
             const seconds = (elapsedTime % 60).toFixed(2);
+            document.getElementById("customMessage").textContent = "3/11/2025";
             document.getElementById("timeTaken").textContent = `완료 시간: ${minutes}분 ${seconds}초`;
             document.getElementById("completionMessage").style.display = "block";
         }
